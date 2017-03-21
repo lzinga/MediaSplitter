@@ -28,7 +28,6 @@ namespace MediaSplitter
             get
             {
 
-                return new TimeSpan(BlackStart.Ticks);
                 TimeSpan added = (BlackStart + BlackEnd);
                 return new TimeSpan(added.Ticks / 2);
             }
@@ -39,7 +38,6 @@ namespace MediaSplitter
             return $"{Season}{Episode} {Title}";
         }
     }
-
 
 
     public class Splitter
@@ -135,7 +133,7 @@ namespace MediaSplitter
                     {
                         FileName = FFMPEGPath,
                         UseShellExecute = false,
-                        Arguments = $"-i \"{info.FullName}\" -vf blackdetect=d=\"{this.Duration}\":pic_th=\"0.5\":pix_th=\"0.09\" -an -f null -",
+                        Arguments = $"-i \"{info.FullName}\" -vf blackdetect=d=\"{this.Duration}\":pic_th=\"0.5\":pix_th=\"0.13\" -an -f null -",
                         CreateNoWindow = true,
                         RedirectStandardOutput = true,
                         RedirectStandardError = true,
@@ -149,6 +147,9 @@ namespace MediaSplitter
             }
 
             List<string> lines = GetLine(ffmpegOutput, "black_start").ToList();
+
+
+
 
             for(int i = 0; i < lines.Count; i++)
             {
@@ -218,10 +219,12 @@ namespace MediaSplitter
             // The name of the file to create (this is a temporary name)
             string newFile = $"{directory}\\{Path.GetFileNameWithoutExtension(file.File)}_%03d{extension}";
 
+            string cutOffs = string.Join(",", file.FileSplits.Where(i => i.BlackStart != TimeSpan.Zero).Select(i => i.Cut.TotalSeconds));
+
             // Splits the files into the respective temporary file names.
             Process ffmpeg = new Process();
             ffmpeg.StartInfo.FileName = FFMPEGPath;
-            ffmpeg.StartInfo.Arguments = $"-i \"{file.File}\" -f segment -segment_times {string.Join(",", file.FileSplits.Where(i => i.BlackStart != TimeSpan.Zero).Select(i => i.Cut.TotalSeconds))} -c:v copy -c:a copy \"{newFile}\"";
+            ffmpeg.StartInfo.Arguments = $"-i \"{file.File}\" -f segment -segment_times {cutOffs} -c:v copy -c:a copy \"{newFile}\"";
             ffmpeg.StartInfo.UseShellExecute = false;
             ffmpeg.Start();
             ffmpeg.WaitForExit();
@@ -254,7 +257,16 @@ namespace MediaSplitter
             {
                 if (line.Contains(where))
                 {
-                    yield return line;
+                    string[] garbage = line.Split(new string[] { "    " }, StringSplitOptions.RemoveEmptyEntries);
+
+                    if(garbage.Length > 1)
+                    {
+                        yield return garbage.Last().Trim();
+                    }
+                    else
+                    {
+                        yield return line.Trim();
+                    }
                 }
             }
         }
