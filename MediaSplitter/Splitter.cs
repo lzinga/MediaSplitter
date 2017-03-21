@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace MediaSplitter
@@ -26,6 +27,8 @@ namespace MediaSplitter
         {
             get
             {
+
+                return new TimeSpan(BlackStart.Ticks);
                 TimeSpan added = (BlackStart + BlackEnd);
                 return new TimeSpan(added.Ticks / 2);
             }
@@ -43,21 +46,29 @@ namespace MediaSplitter
     {
         public string Folder { get; private set; }
         public string[] Extensions { get; private set; }
-        public int Duration { get; private set; }
+        public double Duration { get; private set; }
+        public TimeSpan StartRange { get; private set; }
+        public TimeSpan EndRange { get; private set; }
 
         ProcessStartInfo startInfo = new ProcessStartInfo();
         public string MediaFile { get; set; }
         public readonly string FFMPEGPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources\\ffmpeg.exe");
-        private const string RegexMultiEpisodeFile = @"^([Ss]\d+)((?:[Ee]\d+[-])*[Ee]\d+) +((?:[a-zA-Z0-9 +\d+])*)";
+        private const string RegexMultiEpisodeFile = @"^([Ss]\d+)((?:[Ee]\d+[-])*[Ee]\d+) +((?:.)*)";
         private const string RegexBlackStart = @"(?<=black_start:)\S*(?= black_end:)";
         private const string RegexBlackEnd = @"(?<=black_end:)\S*(?= black_duration:)";
         
 
-        public Splitter(string folder, int duration, params string[] extensions)
+        public Splitter(string folder, double duration, params string[] extensions)
         {
             Folder = folder;
             Extensions = extensions;
             Duration = duration;
+        }
+
+        public Splitter(string folder, double duration, TimeSpan startRange, TimeSpan endRange, params string[] extensions) : this(folder,duration, extensions)
+        {
+            this.StartRange = startRange;
+            this.EndRange = endRange;
         }
 
         public IEnumerable<FileInfo> GetMedia()
@@ -85,13 +96,12 @@ namespace MediaSplitter
                 throw new InvalidDataException("The group count expects 5 results.");
             }
 
-
             string season = match.Groups[1].Value.Trim();
             
             string[] episodeNumbers = match.Groups[2].Value.Trim().Split('-');
             string[] episodeNames = match.Groups[3].Value.Trim().Split('+');
 
-            // Ensure the episode numer count is the same as episode names.
+            // Ensure the episode number count is the same as episode names.
             if (episodeNumbers.Length != episodeNames.Length)
             {
                 throw new InvalidOperationException("The number of episodes did not match the number of names in the title");
@@ -113,30 +123,32 @@ namespace MediaSplitter
 
             }
 
-            string ffmpegOutput = string.Empty;
-            ffmpegOutput = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources\\Mock-3BlackSceen-4Files.txt"));
+            string ffmpegOutput = null;
+            //ffmpegOutput = File.ReadAllText(Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources\\Mock-3BlackSceen-4Files.txt"));
 
             if (string.IsNullOrEmpty(ffmpegOutput))
             {
-                Process ffmpeg = new Process();
-                ffmpeg.StartInfo.FileName = FFMPEGPath;
-                ffmpeg.StartInfo.Arguments = $"-i \"{info.FullName}\" -vf blackdetect=d=\"{this.Duration}\":pic_th=\"0.98\":pix_th=\"0.15\" -an -f null -";
-                ffmpeg.StartInfo.UseShellExecute = false;
-                //ffmpeg.StartInfo.RedirectStandardOutput = true;
-                //ffmpeg.StartInfo.RedirectStandardError = true;
-                ffmpeg.Start();
-                ffmpeg.WaitForExit();
-                ffmpegOutput = ffmpeg.StandardOutput.ReadToEnd();
-            }
+                Log.WriteLine("Starting Black Detection");
+                Process ffmpeg = new Process()
+                {
+                    StartInfo = new ProcessStartInfo()
+                    {
+                        FileName = FFMPEGPath,
+                        UseShellExecute = false,
+                        Arguments = $"-i \"{info.FullName}\" -vf blackdetect=d=\"{this.Duration}\":pic_th=\"0.5\":pix_th=\"0.09\" -an -f null -",
+                        CreateNoWindow = true,
+                        RedirectStandardOutput = true,
+                        RedirectStandardError = true,
+                    }
+                };
 
+                ffmpeg.Start();
+                ffmpegOutput = ffmpeg.StandardError.ReadToEnd();
+
+                ffmpeg.WaitForExit();
+            }
 
             List<string> lines = GetLine(ffmpegOutput, "black_start").ToList();
-
-            // We add one because when there are 2 black_starts it means there will be 3 episodes.
-            if(lines.Count + 1 != split.FileSplits.Count)
-            {
-                throw new InvalidOperationException("The number of splits from black screens do not match the amount of episodes mentioned in the files name.");
-            }
 
             for(int i = 0; i < lines.Count; i++)
             {
@@ -153,10 +165,47 @@ namespace MediaSplitter
                     throw new InvalidOperationException("Could not parse start or end time into a double.");
                 }
 
-                // The current index should reference the episodes in order from 1+.
-                split.FileSplits[i].BlackStart = TimeSpan.FromSeconds(startTime);
-                split.FileSplits[i].BlackEnd = TimeSpan.FromSeconds(endTime);
+                if(StartRange != null && EndRange != null)
+                {
+                    if(startTime < StartRange.TotalSeconds || startTime > EndRange.TotalSeconds)
+                    {
+                        Log.WriteLine($"Skipping: \"{startTime}\"");
+                        continue;
+                    }
+                }
+
+                for(int x = 0; x < split.FileSplits.Count; x++)
+                {
+                    FileSplitInfo splitter = split.FileSplits[x];
+                    TimeSpan start = TimeSpan.FromSeconds(startTime);
+                    TimeSpan end = TimeSpan.FromSeconds(endTime);
+
+                    // Is there any other splitInfo that falls with in 60 seconds of the current one found?
+                    bool any = split.FileSplits.Where(y => y.BlackStart < start).Any(y => start.TotalSeconds - y.BlackStart.TotalSeconds <= 60);
+
+                    if (splitter.BlackStart <= TimeSpan.Zero && splitter.BlackEnd <= TimeSpan.Zero && !any)
+                    {
+                        split.FileSplits[x].BlackStart = start;
+                        split.FileSplits[x].BlackEnd = end;
+                        break;
+                    }
+                }
             }
+
+            // We add one because when there are 2 black_starts it means there will be 3 episodes and when 3 black_Starts 4 episodes and so on.
+            if (episodeNumbers.Length != split.FileSplits.Count)
+            {
+                throw new InvalidOperationException("The number of splits from black screens do not match the amount of episodes mentioned in the files name.");
+            }
+
+            foreach(FileSplitInfo splitter in split.FileSplits)
+            {
+                if(splitter.BlackStart <= TimeSpan.Zero && splitter.BlackEnd <= TimeSpan.Zero)
+                {
+                    Log.WriteLine("Could not find any point to split the file.");
+                }
+            }
+
 
             return split;
         }
@@ -172,16 +221,15 @@ namespace MediaSplitter
             // Splits the files into the respective temporary file names.
             Process ffmpeg = new Process();
             ffmpeg.StartInfo.FileName = FFMPEGPath;
-            ffmpeg.StartInfo.Arguments = $"-i \"{file.File}\" -f segment -segment_times {string.Join(",", file.FileSplits.Where(i => i.BlackStart != TimeSpan.Zero).Select(i => i.Cut.TotalSeconds))} -c copy -map 0 \"{newFile}\"";
+            ffmpeg.StartInfo.Arguments = $"-i \"{file.File}\" -f segment -segment_times {string.Join(",", file.FileSplits.Where(i => i.BlackStart != TimeSpan.Zero).Select(i => i.Cut.TotalSeconds))} -c:v copy -c:a copy \"{newFile}\"";
             ffmpeg.StartInfo.UseShellExecute = false;
             ffmpeg.Start();
             ffmpeg.WaitForExit();
 
-            foreach(var splits in file.FileSplits)
-            {
-                
-            }
+            Thread.Sleep(2500);
 
+
+            // TODO: If it can't find the file don't try to do anything.
             for(int i = 0; i < file.FileSplits.Count; i++)
             {
                 FileSplitInfo split = file.FileSplits[i];
@@ -189,6 +237,15 @@ namespace MediaSplitter
                 string tempName = Path.Combine(directory, Path.GetFileNameWithoutExtension(file.File) + "_00" + i + extension);
                 File.Move(tempName, Path.Combine(directory, split.ToString() + extension));
             }
+
+
+            if(!Directory.Exists(Path.Combine(directory, "Originals")))
+            {
+                Directory.CreateDirectory(Path.Combine(directory, "Originals"));
+            }
+
+            File.Move(file.File, Path.Combine(directory, "Originals") + "\\" + Path.GetFileName(file.File));
+
         }
 
         private IEnumerable<string> GetLine(string input, string where)
