@@ -55,7 +55,6 @@
     <Compile Include="Services\ILogService.cs" />
     <Compile Include="Services\LogService.cs" />
     <Compile Include="Setup.cs" />
-    <Compile Include="Splitter.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

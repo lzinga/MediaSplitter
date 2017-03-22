@@ -62,7 +62,7 @@ namespace MediaSplitter.Common
 
             for(int i = 0; i < episodeNumbers.Length; i++)
             {
-                this.EpisodeInfo.Add(new EpisodeInfo(this.Season, episodeNumbers[i], episodeNames[i]));
+                this.EpisodeInfo.Add(new EpisodeInfo(this.Season, episodeNumbers[i].Trim(), episodeNames[i].Trim()));
             }
         }
         #endregion

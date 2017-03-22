@@ -13,9 +13,15 @@ namespace MediaSplitter
 {
     public class Arguments
     {
-
+        #region Public Properties
+        /// <summary>
+        /// The file/folder to be split. (will work for a folder or a file)
+        /// </summary>
         public string Media { get; set; }
 
+        /// <summary>
+        /// Allowed extensions for files to look for when the Media element is a folder path.
+        /// </summary>
         public List<string> Extensions { get; set; } = new List<string>();
 
         /// <summary>
@@ -26,7 +32,7 @@ namespace MediaSplitter
         /// <summary>
         /// The minimum detected black duration (in seconds)
         /// </summary>
-        public double BlackDuration { get; set; } = 0.1;
+        public double BlackDuration { get; set; } = 0.08;
 
         /// <summary>
         /// Threshold for considering a picture as "Black" (in percent).
@@ -36,7 +42,7 @@ namespace MediaSplitter
         /// <summary>
         /// Threshold for considering a pixel "black" (in luminance)
         /// </summary>
-        public double BlackPixelLuminance { get; set; } = 0.1;
+        public double BlackPixelLuminance { get; set; } = 0.12;
 
         /// <summary>
         /// If specified will ignore any black frame checks and just cut at this point.
@@ -52,8 +58,9 @@ namespace MediaSplitter
         /// The end range to look for black scenes.
         /// </summary>
         public TimeSpan EndRange { get; set; }
+        #endregion
 
-
+        #region Constructor
         public Arguments(string[] args)
         {
             if (args.Length >= 1)
@@ -111,7 +118,13 @@ namespace MediaSplitter
                 }
             }
         }
+        #endregion
 
+        #region Public Methods
+        /// <summary>
+        /// Returns all arguments with their values in string form, 1 argument per return.
+        /// </summary>
+        /// <returns></returns>
         public IEnumerable<string> Get()
         {
             foreach (PropertyInfo info in typeof(Arguments).GetProperties())
@@ -135,6 +148,7 @@ namespace MediaSplitter
                 }
             }
         }
+        #endregion
 
     }
 }

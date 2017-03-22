@@ -25,7 +25,11 @@ namespace MediaSplitter
         static void Main(string[] args)
         {
             List<string> argsList = args.ToList();
+            string media = @"";
+
+            argsList.Add($"/Media=\"{media}\"");
             argsList.Add("/Extensions=.m4v");
+            argsList.Add("/CutTime=00:11:00");
             argsList.Add("/StartRange=00:11:00");
             argsList.Add("/EndRange=00:12:00");
 
@@ -35,8 +39,8 @@ namespace MediaSplitter
             ILogService log = kernal.Get<ILogService>();
             Setup setup = new Setup(new Arguments(argsList.ToArray()), log);
 
-
-            log.WriteHeader($"Exit Code: {setup.Execute()} ({(int)setup.Execute()})");
+            ExitCode exit = setup.Execute();
+            log.WriteHeader($"Exit Code: {exit} ({(int)exit})");
 
 
             Console.ReadLine();
