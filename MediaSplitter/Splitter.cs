@@ -126,7 +126,6 @@ namespace MediaSplitter
 
             if (string.IsNullOrEmpty(ffmpegOutput))
             {
-                Log.WriteLine("Starting Black Detection");
                 Process ffmpeg = new Process()
                 {
                     StartInfo = new ProcessStartInfo()
@@ -170,7 +169,7 @@ namespace MediaSplitter
                 {
                     if(startTime < StartRange.TotalSeconds || startTime > EndRange.TotalSeconds)
                     {
-                        Log.WriteLine($"Skipping: \"{startTime}\"");
+                        //Log.WriteLine($"Skipping: \"{startTime}\"");
                         continue;
                     }
                 }
@@ -203,7 +202,7 @@ namespace MediaSplitter
             {
                 if(splitter.BlackStart <= TimeSpan.Zero && splitter.BlackEnd <= TimeSpan.Zero)
                 {
-                    Log.WriteLine("Could not find any point to split the file.");
+                    //Log.WriteLine("Could not find any point to split the file.");
                 }
             }
 
