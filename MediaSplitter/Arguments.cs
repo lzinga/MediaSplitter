@@ -26,7 +26,7 @@ namespace MediaSplitter
         /// <summary>
         /// The minimum detected black duration (in seconds)
         /// </summary>
-        public double BlackDuration { get; set; } = 0.2;
+        public double BlackDuration { get; set; } = 0.1;
 
         /// <summary>
         /// Threshold for considering a picture as "Black" (in percent).
@@ -36,7 +36,7 @@ namespace MediaSplitter
         /// <summary>
         /// Threshold for considering a pixel "black" (in luminance)
         /// </summary>
-        public double BlackPixelLuminance { get; set; } = 0.15;
+        public double BlackPixelLuminance { get; set; } = 0.1;
 
         /// <summary>
         /// If specified will ignore any black frame checks and just cut at this point.
@@ -65,7 +65,7 @@ namespace MediaSplitter
                     if (full.Contains("="))
                     {
                         string key = full.Split('=')[0].Replace("/", "").Replace("\\", "").Trim();
-                        string value = full.Split('=')[1].Trim();
+                        string value = full.Split('=')[1].Trim().Trim('\"');
 
                         PropertyInfo info = typeof(Arguments).GetProperty(key, BindingFlags.IgnoreCase | BindingFlags.Public | BindingFlags.Instance);
 
@@ -77,13 +77,21 @@ namespace MediaSplitter
                                 info.SetValue(this, span);
                             }
                         }
-                        else if (value.Contains(",") && info.PropertyType.IsGenericType && info.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+                        else if (info.PropertyType.IsGenericType && info.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
                         {
                             Type innerType = info.PropertyType.GetGenericArguments()[0];
                             IList list = info.GetValue(this) as IList;
-                            foreach (string basic in value.Split(','))
+                            if(value.Split(',').Length > 1)
                             {
-                                object item = Convert.ChangeType(basic, innerType);
+                                foreach (string basic in value.Split(','))
+                                {
+                                    object item = Convert.ChangeType(basic, innerType);
+                                    list.Add(item);
+                                }
+                            }
+                            else
+                            {
+                                object item = Convert.ChangeType(value, innerType);
                                 list.Add(item);
                             }
                         }

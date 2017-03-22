@@ -10,7 +10,8 @@ namespace MediaSplitter.Services
     {
         public void WriteDebug()
         {
-            WriteHeader("Press any key to continue...");
+            WriteLine("----------------------------------------------------------------------");
+            WriteLine("Press any key to continue...");
             Console.ReadKey();
         }
 

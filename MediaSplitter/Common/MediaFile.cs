@@ -18,7 +18,8 @@ namespace MediaSplitter.Common
         #region Public Properties
         public FileInfo FileInfo => _fileInfo;
         public string Extension => _fileInfo.Extension;
-        public List<BlackScreenInfo> BlackScreenInfo { get; set; }
+        public List<BlackScreenInfo> BlackScreenInfo { get; set; } = new List<Common.BlackScreenInfo>();
+        public TimeSpan[] CutTimes => BlackScreenInfo.Select(i => i.MiddleTime).ToArray();
         public string Season => _fileNameMatches.Groups[1].Value.Trim();
         public List<EpisodeInfo> EpisodeInfo { get; private set; } = new List<EpisodeInfo>();
         public int EpisodeCount => EpisodeInfo.Count;
@@ -65,6 +66,5 @@ namespace MediaSplitter.Common
             }
         }
         #endregion
-
     }
 }

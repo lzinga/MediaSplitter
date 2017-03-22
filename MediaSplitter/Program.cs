@@ -25,9 +25,9 @@ namespace MediaSplitter
         static void Main(string[] args)
         {
             List<string> argsList = args.ToList();
-            argsList.Add("/StartRange=00:11:30");
-            argsList.Add("/Extensions=.mkv,.mp4,.mp3");
-            argsList.Add("/Debug");
+            argsList.Add("/Extensions=.m4v");
+            argsList.Add("/StartRange=00:11:00");
+            argsList.Add("/EndRange=00:12:00");
 
 
             StandardKernel kernal = new StandardKernel();

@@ -11,12 +11,12 @@ namespace MediaSplitter.Common
         public TimeSpan StartTime { get; set; }
         public TimeSpan MiddleTime => new TimeSpan((StartTime + EndTime).Ticks / 2);
         public TimeSpan EndTime { get; set; }
-        public TimeSpan Duration { get; set; }
+        public TimeSpan Duration => EndTime - StartTime;
 
-        #region Public Constants
-        public const string RegexBlackScreenStart = @"(?<=black_start:)\S*(?= black_end:)";
-        public const string RegexBlackScreenEnd = @"(?<=black_end:)\S*(?= black_duration:)";
-        #endregion
-
+        public BlackScreenInfo(double start, double end)
+        {
+            this.StartTime = TimeSpan.FromSeconds(start);
+            this.EndTime = TimeSpan.FromSeconds(end);
+        }
     }
 }
