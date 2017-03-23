@@ -3,6 +3,15 @@ This was written because I was frustrated with how my Plex Server would read a s
 
 For example If I had a file named `S01E01-E02 New Squid on the Block + Down the Drain.m4v` there is 2 episodes in this one file. Plex using the [TheTvDb](http://thetvdb.com) to get metadata for the episodes would show that file as 2 episodes. However when you chose to play episode 2 it would start at the beginning of episode 1 and you would have to scrub to episode 2 most of the time.
 
+Not only does it split the episode it will do its best to rename it based on the original files name. The episode `S01E01-E02 New Squid on the Block + Down the Drain.m4v` will get split into 2 files named `S01E01 New Squid on the Block.m4v` and `S01E02 Down the Drain.m4v`.
+
+I am sure there are failures to be found though. I ran it on three seasons of [Rocket Power](http://thetvdb.com/?tab=series&id=78282) and it successfully split majority of them. Some would split just after the second episodes title because of some edge cases with Black Screen Detection. Here is the settings I used when I split the 3 seasons.
+
+````
+MediaSpliter.exe /Media="C:\Users\Administrator\Videos\Rocket Power\Season 1" /Extensions=.m4v /StartRange=00:11:00 /EndRange=00:12:00
+````
+Since all of my episodes ended somewhere between 11 and 12 minutes, I told it to just look there.
+
 # Arguments
 #### /Media
 This is always required, it doesn't matter if it is a folder or a single file, it will still split the files. If it is a folder it will scan non-recursively in the folder specified.
