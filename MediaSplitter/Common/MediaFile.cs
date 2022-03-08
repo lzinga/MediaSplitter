@@ -26,7 +26,7 @@ namespace MediaSplitter.Common
         #endregion
 
         #region public Constants
-        public const string RegexMultiEpisodeFile = @"^([Ss]\d+)((?:[Ee]\d+[-])*[Ee]\d+) +((?:.)*)(?=[.])";
+        public const string RegexMultiEpisodeFile = @"[^-]*- ([Ss]\d+)((?:[Ee]\d+[-])*[Ee]\d+) +((?:.)*)(?=[.])";
         #endregion
 
         #region Constructor
