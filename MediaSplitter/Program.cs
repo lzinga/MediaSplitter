@@ -25,13 +25,13 @@ namespace MediaSplitter
         static void Main(string[] args)
         {
             List<string> argsList = args.ToList();
-            string media = @"";
+//            string media = @"";
 
-            argsList.Add($"/Media=\"{media}\"");
-            argsList.Add("/Extensions=.m4v");
-            argsList.Add("/CutTime=00:11:00");
-            argsList.Add("/StartRange=00:11:00");
-            argsList.Add("/EndRange=00:12:00");
+//            argsList.Add($"/Media=\"{media}\"");
+//            argsList.Add("/Extensions=.m4v");
+//            argsList.Add("/CutTime=00:11:00");
+//            argsList.Add("/StartRange=00:11:00");
+//            argsList.Add("/EndRange=00:12:00");
 
 
             StandardKernel kernal = new StandardKernel();
